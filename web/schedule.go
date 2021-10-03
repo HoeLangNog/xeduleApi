@@ -2,28 +2,62 @@ package web
 
 import (
 	"jaapie/xscheduleapi/xschedule"
+	"strconv"
 )
 
 type webTimeSlot struct {
-	Name string `json:"name"`
-	Summary string `json:"summary"`
+	Name      string `json:"name"`
+	Summary   string `json:"summary"`
 	Attention string `json:"attention"`
-	StartTime int64 `json:"start_time"`
-	EndTime int64 `json:"end_time"`
+	StartTime int64  `json:"start_time"`
+	EndTime   int64  `json:"end_time"`
+	Group     string `json:"group"`
+	Teacher   string `json:"teacher"`
+	Location  string `json:"location"`
 }
 
 func translateSchedule(responses []*xschedule.TimeSlot) []*webTimeSlot {
 
 	var newSlots []*webTimeSlot
 	for _, response := range responses {
+		locationCode := ""
+		teacherCode := ""
+		classCode := ""
+		for _, a1 := range response.Attributes {
+			if locationCode == "" {
+				location := xschedule.GetLocationById(strconv.Itoa(a1))
+				if location != nil {
+					locationCode = location.Code
+					continue
+				}
+			}
 
+			if teacherCode == "" {
+				teacher := xschedule.GetTeacherById(strconv.Itoa(a1))
+				if teacher != nil {
+					teacherCode = teacher.Code
+					continue
+				}
+			}
+
+			if classCode == "" {
+				class := xschedule.GetGroupById(strconv.Itoa(a1))
+				if class != nil {
+					classCode = class.Code
+					continue
+				}
+			}
+		}
 		sTime, eTime := response.GetDates()
 		newSlots = append(newSlots, &webTimeSlot{
-			Name: response.Name,
-			Summary: response.Summary,
+			Name:      response.Name,
+			Summary:   response.Summary,
 			Attention: response.Attention,
 			StartTime: sTime.Unix(),
-			EndTime: eTime.Unix(),
+			EndTime:   eTime.Unix(),
+			Group:     classCode,
+			Teacher:   teacherCode,
+			Location:  locationCode,
 		})
 	}
 	return newSlots
