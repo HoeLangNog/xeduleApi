@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"jaapie/xscheduleapi/xschedule"
+	"sort"
 	"strconv"
 	"time"
 )
@@ -17,14 +18,14 @@ func RegisterOldEndpoints(r *gin.Engine) {
 
 type oldUnixOfTodayResponse struct {
 	Start int64 `json:"start"`
-	Last int64 `json:"last"`
+	Last  int64 `json:"last"`
 }
 
 func handleUnixOfToday(c *gin.Context) {
 	group := xschedule.GetGroup("TTB4-SSD2C")
 	year, week := time.Now().ISOWeek()
 	res := xschedule.GetSchedule(&xschedule.TimeSelector{
-		Id: group.Id,
+		Id:   group.Id,
 		Year: year,
 		Week: week,
 	})
@@ -37,8 +38,6 @@ func handleUnixOfToday(c *gin.Context) {
 	scheduleResponse := res[0]
 
 	a := &oldUnixOfTodayResponse{}
-
-
 
 	if len(scheduleResponse.Apps) == 0 {
 		a.Start = 0
@@ -74,18 +73,17 @@ func handleUnixOfToday(c *gin.Context) {
 	}
 }
 
-
 type oldTodayResponse struct {
-	Index int `json:"index"`
-	Id string `json:"id"`
-	Title string `json:"title"`
-	Date string `json:"date"`
-	Day int `json:"day"`
-	Time int64 `json:"time"`
-	TimeEnd int64 `json:"timeEnd"`
+	Index    int    `json:"index"`
+	Id       string `json:"id"`
+	Title    string `json:"title"`
+	Date     string `json:"date"`
+	Day      int    `json:"day"`
+	Time     int64  `json:"time"`
+	TimeEnd  int64  `json:"timeEnd"`
 	Facility string `json:"facility"`
-	Docent string `json:"docent"`
-	Group string `json:"group"`
+	Docent   string `json:"docent"`
+	Group    string `json:"group"`
 }
 
 func handleTodayEndpoint(c *gin.Context) {
@@ -93,7 +91,7 @@ func handleTodayEndpoint(c *gin.Context) {
 
 	year, week := time.Now().ISOWeek()
 	res := xschedule.GetSchedule(&xschedule.TimeSelector{
-		Id: group.Id,
+		Id:   group.Id,
 		Year: year,
 		Week: week,
 	})
@@ -108,6 +106,11 @@ func handleTodayEndpoint(c *gin.Context) {
 	actualResponse := []*oldTodayResponse{}
 	i := 0
 
+	sort.SliceStable(scheduleResponse.Apps, func(i, j int) bool {
+		s, _ := scheduleResponse.Apps[i].GetDates()
+		s2, _ := scheduleResponse.Apps[j].GetDates()
+		return s.Unix() < s2.Unix()
+	})
 	for _, app := range scheduleResponse.Apps {
 		if a, e := app.GetDates(); a.Day() == time.Now().Day() {
 			fmt.Println(app.Attributes)
@@ -133,7 +136,7 @@ func handleTodayEndpoint(c *gin.Context) {
 				}
 
 				if classCode == "" {
-					 class := xschedule.GetGroupById(strconv.Itoa(a1))
+					class := xschedule.GetGroupById(strconv.Itoa(a1))
 					if class != nil {
 						classCode = class.Code
 						continue
@@ -142,16 +145,16 @@ func handleTodayEndpoint(c *gin.Context) {
 			}
 
 			actualResponse = append(actualResponse, &oldTodayResponse{
-				Index: i,
-				Id:    app.Id,
-				Title: app.Name,
-				Date:  strconv.Itoa(a.Day()) + "-" + strconv.Itoa(int(a.Month())),
-				Day: int(a.Weekday()),
-				Time: a.Unix(),
-				TimeEnd: e.Unix(),
+				Index:    i,
+				Id:       app.Id,
+				Title:    app.Name,
+				Date:     strconv.Itoa(a.Day()) + "-" + strconv.Itoa(int(a.Month())),
+				Day:      int(a.Weekday()),
+				Time:     a.Unix(),
+				TimeEnd:  e.Unix(),
 				Facility: locationCode,
-				Docent: teacherCode,
-				Group: classCode,
+				Docent:   teacherCode,
+				Group:    classCode,
 			})
 			i++
 		}
@@ -161,7 +164,7 @@ func handleTodayEndpoint(c *gin.Context) {
 	err := e.Encode(actualResponse)
 
 	if err != nil {
-		c.AbortWithStatusJSON(500, map[string]string {
+		c.AbortWithStatusJSON(500, map[string]string{
 			"error": "Failed encoding json",
 		})
 	}

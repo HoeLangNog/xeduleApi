@@ -11,6 +11,10 @@ func init() {
 
 	r := gin.Default()
 
+	r.Use(func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+	})
+
 	locations := r.Group("/locations")
 	groups := r.Group("/groups")
 	registerGroupsEndpoints(groups)
