@@ -9,6 +9,7 @@ on:
   release:
     types: # This configuration does not affect the page_build event above
       - created
+  workflow_dispatch: null
 
 env:
   # Use docker.io for Docker Hub if empty
