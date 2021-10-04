@@ -9,14 +9,14 @@ import (
 
 type Teacher struct {
 	Code string `json:"code"`
-	Id string `json:"id"`
+	Id   string `json:"id"`
 }
 
 var TeacherCache []*Teacher
 var lastPulledTeacherCache *time.Time
 
 func GetAllTeachers() []*Teacher {
-	if lastPulledTeacherCache != nil && lastPulledTeacherCache.Unix() > time.Now().Unix() - 300 {
+	if lastPulledTeacherCache != nil && lastPulledTeacherCache.Unix() > time.Now().Unix()-300 {
 		return TeacherCache
 	}
 	client := GetAndCheckCookies()
@@ -28,7 +28,7 @@ func GetAllTeachers() []*Teacher {
 		return nil
 	}
 
-	if get.StatusCode == http.StatusUnauthorized {
+	if get.StatusCode != http.StatusOK {
 		Login()
 		return GetAllTeachers()
 	}

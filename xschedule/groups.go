@@ -9,14 +9,14 @@ import (
 
 type Group struct {
 	Code string `json:"code"`
-	Id string `json:"id"`
+	Id   string `json:"id"`
 }
 
 var GroupCache []*Group
 var lastPulledGroupCache *time.Time
 
 func GetAllGroups() []*Group {
-	if lastPulledGroupCache != nil && lastPulledGroupCache.Unix() > time.Now().Unix() - 300 {
+	if lastPulledGroupCache != nil && lastPulledGroupCache.Unix() > time.Now().Unix()-300 {
 		return GroupCache
 	}
 	client := GetAndCheckCookies()
@@ -28,7 +28,7 @@ func GetAllGroups() []*Group {
 		return nil
 	}
 
-	if get.StatusCode == http.StatusUnauthorized {
+	if get.StatusCode != http.StatusOK {
 		Login()
 		return GetAllGroups()
 	}

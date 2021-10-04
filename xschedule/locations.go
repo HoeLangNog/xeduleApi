@@ -10,15 +10,15 @@ import (
 
 type Location struct {
 	Code string `json:"code"`
-	Id string `json:"id"`
-	Orus []int `json:"orus"`
+	Id   string `json:"id"`
+	Orus []int  `json:"orus"`
 }
 
 var Cache []*Location
 var lastPulled *time.Time
 
 func GetAllLocations() []*Location {
-	if lastPulled != nil && lastPulled.Unix() > time.Now().Unix() - 300 {
+	if lastPulled != nil && lastPulled.Unix() > time.Now().Unix()-300 {
 		return Cache
 	}
 	client := GetAndCheckCookies()
@@ -30,7 +30,7 @@ func GetAllLocations() []*Location {
 	}
 	fmt.Println(get.StatusCode)
 
-	if get.StatusCode == http.StatusUnauthorized {
+	if get.StatusCode != http.StatusOK {
 		Login()
 		return GetAllLocations()
 	}
@@ -38,7 +38,6 @@ func GetAllLocations() []*Location {
 	var locations []*Location
 	d := json.NewDecoder(get.Body)
 	err = d.Decode(&locations)
-
 
 	if err != nil {
 		fmt.Println(err)
@@ -48,7 +47,6 @@ func GetAllLocations() []*Location {
 	Cache = locations
 	lastPulled1 := time.Now()
 	lastPulled = &lastPulled1
-
 
 	return locations
 }
@@ -69,7 +67,7 @@ func GetAllLocationsWithPrefix(prefix string, ignoreOLC bool) []*Location {
 			if strings.HasSuffix(f.Code, "examen") {
 				continue
 			}
-			if ignoreOLC && strings.HasPrefix(f.Code, prefix + "OLC") {
+			if ignoreOLC && strings.HasPrefix(f.Code, prefix+"OLC") {
 				continue
 			}
 			newLocations = append(newLocations, f)
@@ -78,7 +76,6 @@ func GetAllLocationsWithPrefix(prefix string, ignoreOLC bool) []*Location {
 	return newLocations
 }
 
-
 func GetAvailableLocations(prefix string, sTime time.Time, eTime time.Time) []*Location {
 	allLocs := GetAllLocationsWithPrefix(prefix, true)
 
@@ -86,7 +83,7 @@ func GetAvailableLocations(prefix string, sTime time.Time, eTime time.Time) []*L
 	var selectors []*TimeSelector
 	for _, loc := range allLocs {
 		selectors = append(selectors, &TimeSelector{
-			Id: loc.Id,
+			Id:   loc.Id,
 			Year: year,
 			Week: week,
 		})
@@ -98,7 +95,7 @@ func GetAvailableLocations(prefix string, sTime time.Time, eTime time.Time) []*L
 
 	for _, res := range resa {
 		lastUnderscore := strings.LastIndex(res.Id, "_")
-		locationId := res.Id[lastUnderscore + 1:]
+		locationId := res.Id[lastUnderscore+1:]
 
 		available := true
 		for _, l1 := range res.Apps {
@@ -106,7 +103,6 @@ func GetAvailableLocations(prefix string, sTime time.Time, eTime time.Time) []*L
 			if StartTime.Day() != sTime.Day() {
 				continue
 			}
-
 
 			if (sTime.Unix() > StartTime.Unix() && sTime.Unix() < EndTime.Unix()) || (eTime.Unix() > StartTime.Unix() && eTime.Unix() < EndTime.Unix()) {
 
@@ -142,7 +138,6 @@ func GetLocationById(id string) *Location {
 	}
 	return nil
 }
-
 
 //func GetAvailableLocations(prefix string, sTime time.Time, eTime time.Time) []*Location {
 //	allLocs := GetAllLocationsWithPrefix(prefix, true)
