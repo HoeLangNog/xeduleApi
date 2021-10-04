@@ -13,7 +13,7 @@ func init() {
 
 	r.Use(func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Cache-Control", "max-age=3600, public")
+		c.Header("Cache-Control", "max-age=300, public")
 	})
 
 	locations := r.Group("/locations")
