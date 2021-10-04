@@ -1,19 +1,27 @@
 package xschedule
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gocolly/colly"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
 	"os"
+	"strconv"
 	"time"
 )
 
 type CachedCookie struct {
 	Expires time.Time
-	Cookie *http.Cookie
+	Cookie  *http.Cookie
 }
+
+type Organization struct {
+	Id string `json:"id"`
+}
+
+var Organizations []*Organization
 
 var CachedCookies []*CachedCookie
 
@@ -28,7 +36,6 @@ func Login() {
 	c1.OnHTML("#loginForm", func(e *colly.HTMLElement) {
 		newUrl := e.Attr("action")
 		host := e.Request.URL.Host
-
 
 		postUrl := "https://" + host + newUrl
 
@@ -49,9 +56,8 @@ func Login() {
 
 				c4 := colly.NewCollector()
 
-
 				c4.Post(newNewPostUrl, map[string]string{
-					"RelayState": relayState,
+					"RelayState":   relayState,
 					"SAMLResponse": samlRes2,
 				})
 
@@ -63,7 +69,7 @@ func Login() {
 					newTime.Add(time.Duration(time.Now().Unix()))
 					cookie := &CachedCookie{
 						Expires: newTime,
-						Cookie: c,
+						Cookie:  c,
 					}
 
 					CachedCookies = append(CachedCookies, cookie)
@@ -72,6 +78,22 @@ func Login() {
 
 				fmt.Println("Logged in!")
 
+				go func() {
+					client := GetAndCheckCookies()
+
+					res, err := client.Get("https://sa-curio.xedule.nl/api/organisationalUnit/")
+					if err != nil {
+						return
+					}
+
+					d := json.NewDecoder(res.Body)
+
+					Organizations = nil
+					err = d.Decode(&Organizations)
+					if err != nil {
+						return
+					}
+				}()
 
 				//fmt.Println(string(e.Response.Body))
 			})
@@ -82,8 +104,8 @@ func Login() {
 		})
 
 		c2.Post(postUrl, map[string]string{
-			"UserName": os.Getenv("username"),
-			"Password": os.Getenv("password"),
+			"UserName":   os.Getenv("username"),
+			"Password":   os.Getenv("password"),
 			"AuthMethod": "FormsAuthentication",
 		})
 	})
@@ -110,4 +132,16 @@ func GetAndCheckCookies() *http.Client {
 	jar.SetCookies(u, cookies)
 	client.Jar = jar
 	return client
+}
+
+func OrganizationIds() []int {
+	var ids []int
+	for _, organization := range Organizations {
+		id, err := strconv.Atoi(organization.Id)
+		if err != nil {
+			continue
+		}
+		ids = append(ids, id)
+	}
+	return ids
 }

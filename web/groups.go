@@ -134,13 +134,20 @@ type webGroupResponse struct {
 
 func translateGroups(groups ...*xschedule.Group) []*webGroupResponse {
 	var responses []*webGroupResponse
+
+	orIds := xschedule.OrganizationIds()
 	for _, group := range groups {
 		visible := false
+
 		for _, orus := range group.Orus {
-			if orus == 15 {
-				visible = true
-				break
+
+			for _, id := range orIds {
+				if id == orus {
+					visible = true
+					break
+				}
 			}
+
 		}
 		responses = append(responses, &webGroupResponse{
 			Code:    group.Code,

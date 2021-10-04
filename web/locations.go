@@ -25,7 +25,7 @@ func handleGetAllLocations(c *gin.Context) {
 	err := e.Encode(translateLocations(xschedule.GetAllLocations()))
 	if err != nil {
 		fmt.Println(err)
-		c.AbortWithStatusJSON(500, map[string]string {
+		c.AbortWithStatusJSON(500, map[string]string{
 			"error": "Couldn't encode to json",
 		})
 	}
@@ -39,7 +39,7 @@ func getAvailableLocations(c *gin.Context) {
 	eTimeU, err := strconv.ParseInt(eTimeUnix, 10, 64)
 
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, map[string]string {
+		c.AbortWithStatusJSON(http.StatusBadRequest, map[string]string{
 			"error": "Bad query timestamps",
 		})
 	}
@@ -76,13 +76,13 @@ func handleGetLocationSchedule(c *gin.Context) {
 	}
 
 	responses := xschedule.GetSchedule(&xschedule.TimeSelector{
-		Id: c.Param("id"),
+		Id:   c.Param("id"),
 		Year: year,
 		Week: week,
 	})
 
 	if len(responses) == 0 {
-		
+
 		return
 	}
 
@@ -98,20 +98,25 @@ func handleGetLocationSchedule(c *gin.Context) {
 }
 
 type webLocation struct {
-	Code string `json:"code"`
-	Id string `json:"id"`
-	Visible bool `json:"visible"`
+	Code    string `json:"code"`
+	Id      string `json:"id"`
+	Visible bool   `json:"visible"`
 }
 
 func translateLocations(locations []*xschedule.Location) []*webLocation {
 	var newLocs []*webLocation
+
+	orIds := xschedule.OrganizationIds()
 	for _, loc := range locations {
 		visible := false
 		for _, orus := range loc.Orus {
-			if orus == 15 {
-				visible = true
-				break
+			for _, id := range orIds {
+				if id == orus {
+					visible = true
+					break
+				}
 			}
+
 		}
 		newLocs = append(newLocs, &webLocation{
 			loc.Code,
