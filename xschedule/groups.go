@@ -10,6 +10,7 @@ import (
 type Group struct {
 	Code string `json:"code"`
 	Id   string `json:"id"`
+	Orus []int  `json:"orus"`
 }
 
 var GroupCache []*Group

@@ -21,7 +21,7 @@ func handleGetAllGroups(c *gin.Context) {
 	groups := xschedule.GetAllGroups()
 
 	e := json.NewEncoder(c.Writer)
-	err := e.Encode(groups)
+	err := e.Encode(translateGroups(groups...))
 
 	if err != nil {
 		c.AbortWithStatusJSON(500, map[string]string{
@@ -82,7 +82,7 @@ func handleGetGroupSchedule(c *gin.Context) {
 	}
 
 	schedule := xschedule.GetSchedule(&xschedule.TimeSelector{
-		Id: group.Id,
+		Id:   group.Id,
 		Year: year,
 		Week: week,
 	})
@@ -103,4 +103,29 @@ func handleGetGroupSchedule(c *gin.Context) {
 		})
 		return
 	}
+}
+
+type webGroupResponse struct {
+	Code    string `json:"code"`
+	Id      string `json:"id"`
+	Visible bool   `json:"visible"`
+}
+
+func translateGroups(groups ...*xschedule.Group) []*webGroupResponse {
+	var responses []*webGroupResponse
+	for _, group := range groups {
+		visible := false
+		for _, orus := range group.Orus {
+			if orus == 15 {
+				visible = true
+				break
+			}
+		}
+		responses = append(responses, &webGroupResponse{
+			Code:    group.Code,
+			Id:      group.Id,
+			Visible: visible,
+		})
+	}
+	return responses
 }
