@@ -20,15 +20,36 @@ func registerGroupsEndpoints(r *gin.RouterGroup) {
 func handleGetAllGroups(c *gin.Context) {
 	groups := xschedule.GetAllGroups()
 
-	e := json.NewEncoder(c.Writer)
-	err := e.Encode(translateGroups(groups...))
+	_, v := c.GetQuery("visible")
 
-	if err != nil {
-		c.AbortWithStatusJSON(500, map[string]string{
-			"error": "Failed encoding to json",
-		})
-		return
+	e := json.NewEncoder(c.Writer)
+
+	if v {
+		var newGroups []*webGroupResponse
+		for _, g := range translateGroups(groups...) {
+			if g.Visible {
+				newGroups = append(newGroups, g)
+			}
+		}
+
+		err := e.Encode(newGroups)
+		if err != nil {
+			c.AbortWithStatusJSON(500, map[string]string{
+				"error": "Failed encoding to json",
+			})
+			return
+		}
+
+	} else {
+		err := e.Encode(translateGroups(groups...))
+		if err != nil {
+			c.AbortWithStatusJSON(500, map[string]string{
+				"error": "Failed encoding to json",
+			})
+			return
+		}
 	}
+
 }
 
 func handleGetGroup(c *gin.Context) {
