@@ -34,7 +34,7 @@ func translateSchedule(responses []*xschedule.TimeSlot) []*webTimeSlot {
 
 			if teacher == nil {
 				teacher1 := xschedule.GetTeacherById(strconv.Itoa(a1))
-				if teacher != nil {
+				if teacher1 != nil {
 					teacher = translateTeachers([]*xschedule.Teacher{teacher1})[0]
 					continue
 				}
