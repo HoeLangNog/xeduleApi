@@ -6,14 +6,14 @@ import (
 )
 
 type webTimeSlot struct {
-	Name      string `json:"name"`
-	Summary   string `json:"summary"`
-	Attention string `json:"attention"`
-	StartTime int64  `json:"start_time"`
-	EndTime   int64  `json:"end_time"`
-	Group     string `json:"group"`
-	Teacher   string `json:"teacher"`
-	Location  string `json:"location"`
+	Name      string      `json:"name"`
+	Summary   string      `json:"summary"`
+	Attention string      `json:"attention"`
+	StartTime int64       `json:"start_time"`
+	EndTime   int64       `json:"end_time"`
+	Group     string      `json:"group"`
+	Teacher   *webTeacher `json:"teacher"`
+	Location  string      `json:"location"`
 }
 
 func translateSchedule(responses []*xschedule.TimeSlot) []*webTimeSlot {
@@ -21,7 +21,7 @@ func translateSchedule(responses []*xschedule.TimeSlot) []*webTimeSlot {
 	var newSlots []*webTimeSlot
 	for _, response := range responses {
 		locationCode := ""
-		teacherCode := ""
+		var teacher *webTeacher
 		classCode := ""
 		for _, a1 := range response.Attributes {
 			if locationCode == "" {
@@ -32,10 +32,10 @@ func translateSchedule(responses []*xschedule.TimeSlot) []*webTimeSlot {
 				}
 			}
 
-			if teacherCode == "" {
-				teacher := xschedule.GetTeacherById(strconv.Itoa(a1))
+			if teacher == nil {
+				teacher1 := xschedule.GetTeacherById(strconv.Itoa(a1))
 				if teacher != nil {
-					teacherCode = teacher.Code
+					teacher = translateTeachers([]*xschedule.Teacher{teacher1})[0]
 					continue
 				}
 			}
@@ -56,7 +56,7 @@ func translateSchedule(responses []*xschedule.TimeSlot) []*webTimeSlot {
 			StartTime: sTime.Unix(),
 			EndTime:   eTime.Unix(),
 			Group:     classCode,
-			Teacher:   teacherCode,
+			Teacher:   teacher,
 			Location:  locationCode,
 		})
 	}
