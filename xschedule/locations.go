@@ -20,35 +20,19 @@ var lastPulled *time.Time
 func GetAllLocations() []*Location {
 	if lastPulled != nil && lastPulled.Unix() > time.Now().Unix()-300 {
 		return Cache
-	}
-	client := GetAndCheckCookies()
-
-	get, err := client.Get("https://sa-curio.xedule.nl/api/classroom/")
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-	fmt.Println(get.StatusCode)
-
-	if get.StatusCode != http.StatusOK {
-		Login()
-		return GetAllLocations()
+	} else {
+		if Cache == nil {
+			return pullAllLocations()
+		} else {
+			lastPulled1 := time.Now()
+			lastPulled = &lastPulled1
+			go func() {
+				_ = pullAllLocations()
+			}()
+			return Cache
+		}
 	}
 
-	var locations []*Location
-	d := json.NewDecoder(get.Body)
-	err = d.Decode(&locations)
-
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-
-	Cache = locations
-	lastPulled1 := time.Now()
-	lastPulled = &lastPulled1
-
-	return locations
 }
 
 func GetAllLocationsWithPrefix(prefix string, ignoreOLC bool) []*Location {
@@ -215,3 +199,34 @@ func GetLocationById(id string) *Location {
 //	fmt.Println(t2 - t1)
 //	return availableLocations
 //}
+
+func pullAllLocations() []*Location {
+	client := GetAndCheckCookies()
+
+	get, err := client.Get("https://sa-curio.xedule.nl/api/classroom/")
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	fmt.Println(get.StatusCode)
+
+	if get.StatusCode != http.StatusOK {
+		Login()
+		return GetAllLocations()
+	}
+
+	var locations []*Location
+	d := json.NewDecoder(get.Body)
+	err = d.Decode(&locations)
+
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+
+	Cache = locations
+	lastPulled1 := time.Now()
+	lastPulled = &lastPulled1
+
+	return locations
+}

@@ -18,7 +18,30 @@ var lastPulledTeacherCache *time.Time
 func GetAllTeachers() []*Teacher {
 	if lastPulledTeacherCache != nil && lastPulledTeacherCache.Unix() > time.Now().Unix()-300 {
 		return TeacherCache
+	} else {
+		if TeacherCache == nil {
+			return pullTeachers()
+		} else {
+			a := time.Now()
+			lastPulledTeacherCache = &a
+			go func() {
+				_ = pullTeachers()
+			}()
+			return TeacherCache
+		}
 	}
+}
+
+func GetTeacherById(id string) *Teacher {
+	for _, t := range GetAllTeachers() {
+		if t.Id == id {
+			return t
+		}
+	}
+	return nil
+}
+
+func pullTeachers() []*Teacher {
 	client := GetAndCheckCookies()
 
 	get, err := client.Get("https://sa-curio.xedule.nl/api/docent/")
@@ -48,13 +71,4 @@ func GetAllTeachers() []*Teacher {
 	lastPulledTeacherCache = &a
 
 	return teachers
-}
-
-func GetTeacherById(id string) *Teacher {
-	for _, t := range GetAllTeachers() {
-		if t.Id == id {
-			return t
-		}
-	}
-	return nil
 }
