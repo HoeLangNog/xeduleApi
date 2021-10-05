@@ -7,9 +7,17 @@ import (
 	"time"
 )
 
+var teacherNames []*TeacherNameEntry
+
 type Teacher struct {
 	Code string `json:"code"`
 	Id   string `json:"id"`
+}
+
+type TeacherNameEntry struct {
+	Code      string `json:"code"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
 }
 
 var TeacherCache []*Teacher
@@ -71,4 +79,13 @@ func pullTeachers() []*Teacher {
 	lastPulledTeacherCache = &a
 
 	return teachers
+}
+
+func GetTeacherName(code string) (firstname string, lastname string, found bool) {
+	for _, nameEntry := range teacherNames {
+		if nameEntry.Code == code {
+			return nameEntry.FirstName, nameEntry.LastName, true
+		}
+	}
+	return "", "", false
 }

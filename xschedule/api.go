@@ -26,6 +26,40 @@ var Organizations []*Organization
 var CachedCookies []*CachedCookie
 
 func init() {
+	go func() {
+		fmt.Println("Trying to find teachersList.json")
+
+		info, err := os.Stat("./teachersList.json")
+
+		if err != nil {
+			fmt.Println("Error finding teachersList.json")
+			return
+		}
+
+		if info.IsDir() {
+			fmt.Println("teachersList.json appears to be a directory (tf are you doing)")
+			return
+		}
+
+		file, err := os.Open("./teachersList.json")
+
+		if err != nil {
+			fmt.Println("Failed the stat but couldn't open (might be permissions)")
+			return
+		}
+
+		d := json.NewDecoder(file)
+
+		err = d.Decode(&teacherNames)
+
+		if err != nil {
+			fmt.Println("Failed reading teacherList as a json")
+			return
+		}
+
+		fmt.Println("Loaded names")
+	}()
+
 	Login()
 }
 
