@@ -18,8 +18,10 @@ func init() {
 
 	locations := r.Group("/locations")
 	groups := r.Group("/groups")
+	teachers := r.Group("/teachers")
 	registerGroupsEndpoints(groups)
 	registerLocations(locations)
+	registerTeachersEndpoints(teachers)
 	RegisterOldEndpoints(r)
 	router = r
 }
