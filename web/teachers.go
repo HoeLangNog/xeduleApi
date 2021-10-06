@@ -25,10 +25,10 @@ func handleGetAllTeachers(c *gin.Context) {
 }
 
 type webTeacher struct {
-	Code      string `json:"code"`
-	Id        string `json:"id"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
+	Code      string  `json:"code"`
+	Id        string  `json:"id"`
+	FirstName *string `json:"firstName"`
+	LastName  *string `json:"lastName"`
 }
 
 func translateTeachers(teachers []*xschedule.Teacher) []*webTeacher {
@@ -36,11 +36,22 @@ func translateTeachers(teachers []*xschedule.Teacher) []*webTeacher {
 	for _, teacher := range teachers {
 		fi, l, f := xschedule.GetTeacherName(teacher.Code)
 		if f {
+
+			firstName := &fi
+			lastName := &l
+
+			if *firstName == "none" {
+				firstName = nil
+			}
+			if *lastName == "none" {
+				lastName = nil
+			}
+
 			newTeachers = append(newTeachers, &webTeacher{
 				Code:      teacher.Code,
 				Id:        teacher.Id,
-				FirstName: fi,
-				LastName:  l,
+				FirstName: firstName,
+				LastName:  lastName,
 			})
 		} else {
 			newTeachers = append(newTeachers, &webTeacher{
