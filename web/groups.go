@@ -109,7 +109,7 @@ func handleGetGroupSchedule(c *gin.Context) {
 	})
 
 	if len(schedule) == 0 {
-		c.AbortWithStatus(404)
+		c.JSON(200, []string{})
 		return
 	}
 
