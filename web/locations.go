@@ -79,6 +79,7 @@ func handleGetLocationSchedule(c *gin.Context) {
 		Id:   c.Param("id"),
 		Year: year,
 		Week: week,
+		Orus: 15,
 	})
 
 	if len(responses) == 0 {

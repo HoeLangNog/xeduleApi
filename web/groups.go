@@ -106,6 +106,7 @@ func handleGetGroupSchedule(c *gin.Context) {
 		Id:   group.Id,
 		Year: year,
 		Week: week,
+		Orus: group.Orus[len(group.Orus)-1],
 	})
 
 	if len(schedule) == 0 {

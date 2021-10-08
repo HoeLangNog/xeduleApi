@@ -38,6 +38,7 @@ func (timeSlot *TimeSlot) GetDates() (*time.Time, *time.Time) {
 }
 
 type TimeSelector struct {
+	Orus int
 	Year int
 	Week int
 	Id   string
@@ -62,7 +63,7 @@ func GetSchedule(selectors ...*TimeSelector) []*Response {
 			}
 		}
 
-		query += "ids%5B" + strconv.Itoa(i) + "%5D=" + "15_" + strconv.Itoa(selector.Year) + "_" + strconv.Itoa(selector.Week) + "_" + selector.Id + "&"
+		query += "ids%5B" + strconv.Itoa(i) + "%5D=" + strconv.Itoa(selector.Orus) + "_" + strconv.Itoa(selector.Year) + "_" + strconv.Itoa(selector.Week) + "_" + selector.Id + "&"
 	}
 	query = query[:len(query)-1]
 

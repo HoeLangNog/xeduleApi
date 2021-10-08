@@ -70,6 +70,7 @@ func GetAvailableLocations(prefix string, sTime time.Time, eTime time.Time) []*L
 			Id:   loc.Id,
 			Year: year,
 			Week: week,
+			Orus: loc.Orus[len(loc.Orus)-1],
 		})
 	}
 
