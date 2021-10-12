@@ -8,7 +8,6 @@ import (
 var router *gin.Engine
 
 func init() {
-
 	r := gin.Default()
 
 	r.Use(func(c *gin.Context) {

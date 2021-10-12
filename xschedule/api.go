@@ -144,7 +144,7 @@ func Login() {
 		})
 	})
 
-	c1.Visit("https://roosters.curio.nl")
+	c1.Visit("https://sa-curio.xedule.nl")
 }
 
 func GetAndCheckCookies() *http.Client {
