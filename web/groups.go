@@ -15,6 +15,62 @@ func registerGroupsEndpoints(r *gin.RouterGroup) {
 
 	r.GET("/:groupCode", handleGetGroup)
 	r.GET("/:groupCode/schedule", handleGetGroupSchedule)
+	r.GET("/:groupCode/unixoftoday", handleGetGroupUnix)
+}
+
+func handleGetGroupUnix(c *gin.Context){
+	groupCode := c.Param("groupCode")
+
+	group := xschedule.GetGroup(groupCode)
+	year, week := time.Now().ISOWeek()
+	res := xschedule.GetSchedule(&xschedule.TimeSelector{
+		Id:   group.Id,
+		Year: year,
+		Week: week,
+		Orus: group.Orus[len(group.Orus)-1],
+	})
+
+	if len(res) == 0 {
+		c.AbortWithStatus(404)
+		return
+	}
+
+	scheduleResponse := res[0]
+
+	a := &oldUnixOfTodayResponse{}
+
+	if len(scheduleResponse.Apps) == 0 {
+		a.Start = 0
+		a.Last = 0
+	} else {
+		smallestBegin := int64(545645645645678976)
+		largestEnd := int64(-1)
+		for _, res := range scheduleResponse.Apps {
+			sTime, eTime := res.GetDates()
+			if sTime.Day() == time.Now().Day() {
+				if smallestBegin > sTime.Unix() {
+					smallestBegin = sTime.Unix()
+				}
+				if largestEnd < eTime.Unix() {
+					largestEnd = eTime.Unix()
+				}
+			}
+		}
+		a.Start = smallestBegin
+		a.Last = largestEnd
+
+	}
+
+	e := json.NewEncoder(c.Writer)
+
+	err := e.Encode(a)
+
+	if err != nil {
+		c.AbortWithStatusJSON(500, map[string]string{
+			"error": "Failed to encode json",
+		})
+		return
+	}
 }
 
 func handleGetAllGroups(c *gin.Context) {
