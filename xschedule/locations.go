@@ -89,8 +89,9 @@ func GetAvailableLocations(prefix string, sTime time.Time, eTime time.Time) []*L
 				continue
 			}
 
-			if (sTime.Unix() > StartTime.Unix() && sTime.Unix() < EndTime.Unix()) || (eTime.Unix() > StartTime.Unix() && eTime.Unix() < EndTime.Unix()) {
-
+			if (StartTime.Unix() < sTime.Unix() && EndTime.Unix() > sTime.Unix()) ||
+				(StartTime.Unix() > sTime.Unix() && EndTime.Unix() < eTime.Unix()) ||
+				(StartTime.Unix() < eTime.Unix() && EndTime.Unix() > eTime.Unix()) {
 				available = false
 				break
 			}
