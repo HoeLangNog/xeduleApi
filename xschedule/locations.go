@@ -89,16 +89,34 @@ func GetAvailableLocations(prefix string, sTime time.Time, eTime time.Time) []*L
 				continue
 			}
 
-			fmt.Println(StartTime.Unix(), EndTime.Unix(), sTime.Unix(), eTime.Unix())
-
-			if (StartTime.Unix() > sTime.Unix() && StartTime.Unix() < eTime.Unix()) || // If search starts before and ends in a lesson
-				(StartTime.Unix() < sTime.Unix() && EndTime.Unix() > eTime.Unix()) || // If search is entirely in a lesson
-				(EndTime.Unix() > sTime.Unix() && EndTime.Unix() < eTime.Unix()) || // If search start in and ends after a lesson
-				(StartTime.Unix() > sTime.Unix() && EndTime.Unix() < eTime.Unix()) { // If search is entirely over a lesson
-
+			// If search starts before and ends in a lesson
+			if sTime.Unix() < StartTime.Unix() && eTime.Unix() < StartTime.Unix() {
+				fmt.Println("1")
 				available = false
 				break
 			}
+
+			// If search is entirely in a lesson
+			if sTime.Unix() > StartTime.Unix() && eTime.Unix() < EndTime.Unix() {
+				fmt.Println("2")
+				available = false
+				break
+			}
+
+			// If search start in and ends after a lesson
+			if sTime.Unix() > EndTime.Unix() && eTime.Unix() > EndTime.Unix() {
+				fmt.Println("3")
+				available = false
+				break
+			}
+
+			// If search is entirely over a lesson
+			if sTime.Unix() < StartTime.Unix() && eTime.Unix() > EndTime.Unix() {
+				fmt.Println("4")
+				available = false
+				break
+			}
+
 		}
 
 		if available {
