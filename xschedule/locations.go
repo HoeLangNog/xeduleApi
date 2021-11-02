@@ -89,8 +89,6 @@ func GetAvailableLocations(prefix string, sTime time.Time, eTime time.Time) []*L
 				continue
 			}
 
-			fmt.Println(StartTime.Unix(), EndTime.Unix(), sTime.Unix(), eTime.Unix())
-
 			if (StartTime.Unix() > sTime.Unix() && StartTime.Unix() < eTime.Unix()) || // If search starts before and ends in a lesson
 				(StartTime.Unix() < sTime.Unix() && EndTime.Unix() > eTime.Unix()) || // If search is entirely in a lesson
 				(EndTime.Unix() > sTime.Unix() && EndTime.Unix() < eTime.Unix()) || // If search start in and ends after a lesson
