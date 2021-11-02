@@ -28,8 +28,8 @@ type TimeSlot struct {
 
 func (timeSlot *TimeSlot) GetDates() (*time.Time, *time.Time) {
 	if timeSlot.startTime == nil || timeSlot.endTime == nil {
-		stime, _ := time.Parse("2006-01-02T15:04:05 MST", timeSlot.StartTimeS+" CEST")
-		etime, _ := time.Parse("2006-01-02T15:04:05 MST", timeSlot.EndTimeS+" CEST")
+		stime, _ := time.Parse("2006-01-02T15:04:05 MST", timeSlot.StartTimeS+" CET")
+		etime, _ := time.Parse("2006-01-02T15:04:05 MST", timeSlot.EndTimeS+" CET")
 		timeSlot.startTime = &stime
 		timeSlot.endTime = &etime
 
