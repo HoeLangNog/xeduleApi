@@ -18,7 +18,7 @@ func registerGroupsEndpoints(r *gin.RouterGroup) {
 	r.GET("/:groupCode/unixoftoday", handleGetGroupUnix)
 }
 
-func handleGetGroupUnix(c *gin.Context){
+func handleGetGroupUnix(c *gin.Context) {
 	groupCode := c.Param("groupCode")
 
 	group := xschedule.GetGroup(groupCode)
@@ -135,6 +135,7 @@ func handleGetGroup(c *gin.Context) {
 func handleGetGroupSchedule(c *gin.Context) {
 	yearString := c.Query("year")
 	weekString := c.Query("week")
+	_, today := c.GetQuery("today")
 
 	nowYear, nowWeek := time.Now().ISOWeek()
 
@@ -171,6 +172,21 @@ func handleGetGroupSchedule(c *gin.Context) {
 	}
 
 	res := schedule[0]
+
+	if today {
+		apps := res.Apps
+		res.Apps = []*xschedule.TimeSlot{}
+
+		time2 := time.Now()
+
+		for _, app := range apps {
+			sTime, _ := app.GetDates()
+
+			if sTime.Day() == time2.Day() {
+				res.Apps = append(res.Apps, app)
+			}
+		}
+	}
 
 	e := json.NewEncoder(c.Writer)
 	err = e.Encode(translateSchedule(res.Apps))
