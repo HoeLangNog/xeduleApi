@@ -215,8 +215,8 @@ func pullAllLocations() []*Location {
 	fmt.Println(get.StatusCode)
 
 	if get.StatusCode != http.StatusOK {
-		Login()
-		return GetAllLocations()
+		go Login()
+		return Cache
 	}
 
 	var locations []*Location

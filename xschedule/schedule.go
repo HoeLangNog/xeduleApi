@@ -79,8 +79,11 @@ func GetSchedule(selectors ...*TimeSelector) []*Response {
 		}
 
 		if get.StatusCode != http.StatusOK {
-			Login()
-			return GetSchedule(selectors...)
+			go func() {
+				Login()
+			}()
+			responses = append(responses, schedulesInCache...)
+			return responses
 		}
 
 		d := json.NewDecoder(get.Body)

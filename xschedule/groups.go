@@ -67,8 +67,8 @@ func pullGroups() []*Group {
 	}
 
 	if get.StatusCode != http.StatusOK {
-		Login()
-		return GetAllGroups()
+		go Login()
+		return GroupCache
 	}
 
 	d := json.NewDecoder(get.Body)

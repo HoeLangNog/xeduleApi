@@ -60,8 +60,8 @@ func pullTeachers() []*Teacher {
 	}
 
 	if get.StatusCode != http.StatusOK {
-		Login()
-		return GetAllTeachers()
+		go Login()
+		return TeacherCache
 	}
 
 	d := json.NewDecoder(get.Body)
