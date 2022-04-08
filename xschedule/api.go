@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -24,6 +25,11 @@ type Organization struct {
 var Organizations []*Organization
 
 var CachedCookies []*CachedCookie
+
+var lastLogin *int64
+var awaitingLogin bool = false
+
+var loginLock = &sync.Mutex{}
 
 func init() {
 	go func() {
@@ -64,6 +70,20 @@ func init() {
 }
 
 func Login() {
+	if !loginLock.TryLock() {
+		return
+	}
+
+	if lastLogin != nil && *lastLogin > (time.Now().Unix()-82) {
+		awaitingLogin = true
+
+		timeToWait := (*lastLogin) - time.Now().Unix() + 82
+		fmt.Println("waiting for login", timeToWait, "seconds")
+		time.Sleep(time.Second * time.Duration(timeToWait))
+	}
+	lastLogina := time.Now().Unix()
+	lastLogin = &lastLogina
+
 	fmt.Println("Started logging in.")
 	c1 := colly.NewCollector()
 
@@ -111,6 +131,7 @@ func Login() {
 				}
 
 				fmt.Println("Logged in!")
+				loginLock.Unlock()
 
 				go func() {
 					client := GetAndCheckCookies()
