@@ -55,6 +55,7 @@ func GetSchedule(selectors ...*TimeSelector) []*Response {
 	query := "?"
 	var schedulesInCache []*Response
 	for i, selector := range selectors {
+		selector.Year -= 1
 		cache, found := ScheduleCache[*selector]
 		if found {
 			if cache.PulledTime.Unix() > time.Now().Unix()-1800 {
