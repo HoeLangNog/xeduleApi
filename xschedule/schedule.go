@@ -3,6 +3,7 @@ package xschedule
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -52,9 +53,9 @@ type CachedSchedule struct {
 }
 
 func GetSchedule(selectors ...*TimeSelector) []*Response {
-	query := "?"
 	var schedulesInCache []*Response
-	for i, selector := range selectors {
+	var toBeProcessed []*TimeSelector
+	for _, selector := range selectors {
 		selector.Year -= 1
 		cache, found := ScheduleCache[*selector]
 		if found {
@@ -64,56 +65,84 @@ func GetSchedule(selectors ...*TimeSelector) []*Response {
 			}
 		}
 
-		query += "ids%5B" + strconv.Itoa(i) + "%5D=" + strconv.Itoa(selector.Orus) + "_" + strconv.Itoa(selector.Year) + "_" + strconv.Itoa(selector.Week) + "_" + selector.Id + "&"
+		toBeProcessed = append(toBeProcessed, selector)
 	}
-	query = query[:len(query)-1]
-
+	chunks := chunkSchedules(toBeProcessed, 25)
 	var responses []*Response
-	if query != "" {
-		client := GetAndCheckCookies()
 
-		get, err := client.Get("https://sa-curio.xedule.nl/api/schedule/" + query)
+	for _, chunk := range chunks {
+		query := "?"
 
-		if err != nil {
-			fmt.Println(err)
-			return nil
+		for i, selector := range chunk {
+			query += "ids%5B" + strconv.Itoa(i) + "%5D=" + strconv.Itoa(selector.Orus) + "_" + strconv.Itoa(selector.Year) + "_" + strconv.Itoa(selector.Week) + "_" + selector.Id + "&"
 		}
 
-		if get.StatusCode != http.StatusOK {
-			go func() {
-				Login()
-			}()
-			responses = append(responses, schedulesInCache...)
-			return responses
+		query = query[:len(query)-1]
+
+		if query != "" {
+			client := GetAndCheckCookies()
+
+			get, err := client.Get("https://sa-curio.xedule.nl/api/schedule" + query)
+
+			if err != nil {
+				fmt.Println(err)
+				return nil
+			}
+			if get.StatusCode != http.StatusOK {
+				fmt.Println(get.StatusCode)
+
+				body, _ := ioutil.ReadAll(get.Body)
+				fmt.Println(string(body))
+				go func() {
+					Login()
+				}()
+				responses = append(responses, schedulesInCache...)
+				return responses
+			}
+
+			d := json.NewDecoder(get.Body)
+
+			err = d.Decode(&responses)
+
+			if err != nil {
+				fmt.Println(err)
+				return nil
+			}
 		}
 
-		d := json.NewDecoder(get.Body)
-
-		err = d.Decode(&responses)
-
-		if err != nil {
-			fmt.Println(err)
-			return nil
+		for _, response := range responses {
+			split := strings.Split(response.Id, "_")
+			year, _ := strconv.Atoi(split[1])
+			week, _ := strconv.Atoi(split[2])
+			selector := TimeSelector{
+				Id:   split[3],
+				Year: year,
+				Week: week,
+			}
+			ScheduleCache[selector] = &CachedSchedule{
+				Schedule:   response,
+				PulledTime: time.Now(),
+			}
 		}
+
+		responses = append(responses, schedulesInCache...)
+
 	}
-
-	for _, response := range responses {
-		split := strings.Split(response.Id, "_")
-		year, _ := strconv.Atoi(split[1])
-		week, _ := strconv.Atoi(split[2])
-		selector := TimeSelector{
-			Id:   split[3],
-			Year: year,
-			Week: week,
-		}
-		ScheduleCache[selector] = &CachedSchedule{
-			Schedule:   response,
-			PulledTime: time.Now(),
-		}
-	}
-
-	responses = append(responses, schedulesInCache...)
 
 	return responses
+}
 
+func chunkSchedules(selectors []*TimeSelector, size int) [][]*TimeSelector {
+	var chunks [][]*TimeSelector
+	for i := 0; i < len(selectors); i += size {
+		end := i + size
+
+		if end > len(selectors) {
+			end = len(selectors)
+		}
+
+		chunks = append(chunks, selectors[i:end])
+	}
+
+	return chunks
 }
