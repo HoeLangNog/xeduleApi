@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -46,6 +47,7 @@ type TimeSelector struct {
 }
 
 var ScheduleCache = make(map[TimeSelector]*CachedSchedule)
+var ScheduleCacheLock = &sync.RWMutex{}
 
 type CachedSchedule struct {
 	Schedule   *Response
@@ -57,7 +59,9 @@ func GetSchedule(selectors ...*TimeSelector) []*Response {
 	var toBeProcessed []*TimeSelector
 	for _, selector := range selectors {
 		selector.Year -= 1
+		ScheduleCacheLock.RLock()
 		cache, found := ScheduleCache[*selector]
+		ScheduleCacheLock.RUnlock()
 		if found {
 			if cache.PulledTime.Unix() > time.Now().Unix()-1800 {
 				schedulesInCache = append(schedulesInCache, cache.Schedule)
@@ -69,65 +73,84 @@ func GetSchedule(selectors ...*TimeSelector) []*Response {
 	}
 	chunks := chunkSchedules(toBeProcessed, 25)
 	var responses []*Response
+	responses = append(responses, schedulesInCache...)
+	responsesLock := &sync.Mutex{}
+	var wg sync.WaitGroup
 
 	for _, chunk := range chunks {
-		query := "?"
+		wg.Add(1)
 
-		for i, selector := range chunk {
-			query += "ids%5B" + strconv.Itoa(i) + "%5D=" + strconv.Itoa(selector.Orus) + "_" + strconv.Itoa(selector.Year) + "_" + strconv.Itoa(selector.Week) + "_" + selector.Id + "&"
-		}
+		chunk := chunk
+		go func() {
+			var localResponses []*Response
+			query := "?"
 
-		query = query[:len(query)-1]
-
-		if query != "" {
-			client := GetAndCheckCookies()
-
-			get, err := client.Get("https://sa-curio.xedule.nl/api/schedule" + query)
-
-			if err != nil {
-				fmt.Println(err)
-				return nil
-			}
-			if get.StatusCode != http.StatusOK {
-				fmt.Println(get.StatusCode)
-
-				body, _ := ioutil.ReadAll(get.Body)
-				fmt.Println(string(body))
-				go func() {
-					Login()
-				}()
-				responses = append(responses, schedulesInCache...)
-				return responses
+			for i, selector := range chunk {
+				query += "ids%5B" + strconv.Itoa(i) + "%5D=" + strconv.Itoa(selector.Orus) + "_" + strconv.Itoa(selector.Year) + "_" + strconv.Itoa(selector.Week) + "_" + selector.Id + "&"
 			}
 
-			d := json.NewDecoder(get.Body)
+			query = query[:len(query)-1]
 
-			err = d.Decode(&responses)
+			if query != "" {
+				client := GetAndCheckCookies()
 
-			if err != nil {
-				fmt.Println(err)
-				return nil
+				get, err := client.Get("https://sa-curio.xedule.nl/api/schedule" + query)
+
+				if err != nil {
+					fmt.Println(err)
+					wg.Done()
+					return
+				}
+				if get.StatusCode != http.StatusOK {
+					fmt.Println(get.StatusCode)
+
+					body, _ := ioutil.ReadAll(get.Body)
+					fmt.Println(string(body))
+					go func() {
+						Login()
+					}()
+
+					wg.Done()
+					return
+				}
+
+				d := json.NewDecoder(get.Body)
+
+				err = d.Decode(&localResponses)
+
+				if err != nil {
+					fmt.Println(err)
+					wg.Done()
+					return
+				}
 			}
-		}
 
-		for _, response := range responses {
-			split := strings.Split(response.Id, "_")
-			year, _ := strconv.Atoi(split[1])
-			week, _ := strconv.Atoi(split[2])
-			selector := TimeSelector{
-				Id:   split[3],
-				Year: year,
-				Week: week,
+			for _, response := range localResponses {
+				split := strings.Split(response.Id, "_")
+				year, _ := strconv.Atoi(split[1])
+				week, _ := strconv.Atoi(split[2])
+				selector := TimeSelector{
+					Id:   split[3],
+					Year: year,
+					Week: week,
+				}
+				ScheduleCacheLock.Lock()
+				ScheduleCache[selector] = &CachedSchedule{
+					Schedule:   response,
+					PulledTime: time.Now(),
+				}
+				ScheduleCacheLock.Unlock()
 			}
-			ScheduleCache[selector] = &CachedSchedule{
-				Schedule:   response,
-				PulledTime: time.Now(),
-			}
-		}
 
-		responses = append(responses, schedulesInCache...)
+			responsesLock.Lock()
+			responses = append(responses, localResponses...)
+			responsesLock.Unlock()
+			wg.Done()
+		}()
 
 	}
+
+	wg.Wait()
 
 	return responses
 }
