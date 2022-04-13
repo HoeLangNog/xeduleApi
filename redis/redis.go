@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	"os"
+	"reflect"
+	"strconv"
 	"time"
 )
 
@@ -51,9 +53,32 @@ func GetStore[T any](key string, target T) error {
 	return err
 }
 
-func getEnvOrDefault(key string, defaultValue string) string {
+func getEnvOrDefault[T int | string | bool | float64](key string, defaultValue T) T {
 	if value, ok := os.LookupEnv(key); ok {
-		return value
+		var err error = nil
+
+		defer func() {
+			if err != nil {
+				panic(err)
+			}
+		}()
+
+		switch reflect.TypeOf(defaultValue).Kind() {
+		case reflect.String:
+			return interface{}(value).(T)
+		case reflect.Int:
+			intVal, err2 := strconv.Atoi(value)
+			err = err2
+			return interface{}(intVal).(T)
+		case reflect.Bool:
+			boolVal, err2 := strconv.ParseBool(value)
+			err = err2
+			return interface{}(boolVal).(T)
+		case reflect.Float64:
+			floatVal, err2 := strconv.ParseFloat(value, 64)
+			err = err2
+			return interface{}(floatVal).(T)
+		}
 	}
 	return defaultValue
 }
