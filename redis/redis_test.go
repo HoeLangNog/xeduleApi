@@ -2,6 +2,7 @@ package redis
 
 import (
 	"encoding/binary"
+	"os"
 	"testing"
 )
 
@@ -64,5 +65,19 @@ func TestRedisStore(t *testing.T) {
 
 	if result.S != "fuck" || result.I != 1 {
 		t.Error("fuck is not fuck")
+	}
+}
+
+func TestGetEnvOrDefault(t *testing.T) {
+	os.Setenv("bool", "false")
+	os.Setenv("int", "0")
+	os.Setenv("float", "0.123")
+	os.Setenv("string", "fuck")
+
+	if getEnvOrDefault("bool", true) ||
+		getEnvOrDefault("int", 1) != 0 ||
+		getEnvOrDefault("float", 1.234) != 0.123 ||
+		getEnvOrDefault("string", "virgin") != "fuck" {
+		t.Error("getEnvOrDefault error")
 	}
 }
